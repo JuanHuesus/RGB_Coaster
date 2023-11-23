@@ -2,9 +2,9 @@
 #include <Wire.h>
 #include <rgb_lcd.h>
 
-#define LED_STRIP_PIN    6    // Change this to the actual pin connected to your WS2813 LED strip
-#define NUM_LEDS         30   // Change this to the number of LEDs in your strip
-#define LM35_PIN         A6   // Change this to the actual pin connected to your LM35 sensor
+#define LED_STRIP_PIN    6    
+#define NUM_LEDS         30   
+#define LM35_PIN         A6   
 
 CRGB leds[NUM_LEDS];
 rgb_lcd lcd;
@@ -51,7 +51,6 @@ void loop() {
     lastUpdate = millis(); // Update the last update time
   }
 
-  // Your other non-blocking tasks can go here
 }
 
 CRGB mapTemperatureToColor(float temperature) {
