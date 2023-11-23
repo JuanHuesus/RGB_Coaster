@@ -1,0 +1,55 @@
+Lopputyö suunnitelma Reactive coaster for da drinks
+--------------------------------------------------------------------------------------------------------
+
+All-in-one
+Pros:  
+-	Helposti liikutettava
+-	Vähemmän osia mahdollisesti (esim. Johdot yms) 
+-	Enemmän finalisoitu projekti
+Cons:
+-	Vaikeampi suunnitella hyvän näköiseksi
+-	Paristot vaihdettava
+-	Pieni siili kuolee (jos sä juotat sille maitoa)
+
+
+Erillään
+Pros: 
+-	Helpompi muokata tarvittaessa
+Cons:
+-	Vaatii virran seinästä
+-	Vaikeampi liikuttaa
+--------------------------------------------------------------------------------------------------------
+Osalista: 
+-	Paristot ja niille pidike
+-	Jonkinlainen puusta/vaneerista tehty kehikko
+-	Johtoja
+-	Led-strip
+-	Jokin valoa läpipäästävä materiaali kehikon kattona tai reunoina
+-	Arduino nano
+-	Antureita(lämpö, ääni)
+-	Kytkin profiilien vaihtoon (staattinen väri, lämpö ja ääni)
+-	Näyttö(?)
+--------------------------------------------------------------------------------------------------------
+
+
+
+Labrasta:
+       - Paristot ja niiden pidike
+-	Johdot
+-	Led-strip? 
+-	Arduinot
+-	Anturit
+-	Kytkin
+-	Näyttö
+Muualta: 
+-	Kehikko ja siihen tulevat osat
+-	Led-strip?
+
+
+Kehikko
+Muoto: Ympyrä, Nelikulmainen
+Materiaali: Puu / Vaneeri, Opaali Muovilevy
+
+
+
+
