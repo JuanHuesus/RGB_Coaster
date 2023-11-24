@@ -2,9 +2,12 @@
 #include <Wire.h>
 #include <rgb_lcd.h>
 
-#define LED_STRIP_PIN    6    
-#define NUM_LEDS         30   
-#define LM35_PIN         A6   
+#define LED_STRIP_PIN    2   // Change this to the actual pin connected to your WS2813 LED strip
+#define NUM_LEDS         5   // Change this to the number of LEDs in your strip
+#define LM35_PIN         A6   // Change this to the actual pin connected to your LM35 sensor
+
+
+int light;
 
 CRGB leds[NUM_LEDS];
 rgb_lcd lcd;
@@ -21,6 +24,8 @@ void setup() {
 
   FastLED.addLeds<NEOPIXEL, LED_STRIP_PIN>(leds, NUM_LEDS);
   FastLED.show();  // Initialize all LEDs to 'off'
+
+
 }
 
 void loop() {
@@ -51,6 +56,7 @@ void loop() {
     lastUpdate = millis(); // Update the last update time
   }
 
+  
 }
 
 CRGB mapTemperatureToColor(float temperature) {
@@ -58,9 +64,9 @@ CRGB mapTemperatureToColor(float temperature) {
   // For example, you can use a gradient from blue to red
 
   // Assuming temperature range is from 0 to 100 degrees Celsius
-  uint8_t r = map(temperature, 0, 100, 0, 255);
-  uint8_t b = 255 - r;
-  CRGB color = CRGB(r, 0, b);
+  uint8_t r = map(temperature, 10, 50, 0, 255);
+  uint8_t g = map(temperature, 10, 50, 255, 0);
+  CRGB color = CRGB(r, g, 0);
 
   return color;
 }
