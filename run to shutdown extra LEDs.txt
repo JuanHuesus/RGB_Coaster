@@ -1,0 +1,21 @@
+#include <FastLED.h>
+
+#define NUM_LEDS  60
+#define LED_PIN   2
+
+CRGB leds[NUM_LEDS];
+
+
+void setup() {
+  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.setBrightness(50);
+}
+
+void loop() {
+  
+
+   // Fade all LEDs down by 1 in brightness each time this is called
+   fadeToBlackBy(leds, NUM_LEDS, 100);
+  
+  FastLED.show();
+}
