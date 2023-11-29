@@ -22,6 +22,15 @@ DEFINE_GRADIENT_PALETTE (heatmap_gp) {
 
 CRGBPalette16 myPal = heatmap_gp;
 
+DEFINE_GRADIENT_PALETTE(soundPalette_gp) {
+  0,    128, 0, 128,  // Purple
+  64,   0,   200, 255,  // Cyan
+  128,  0,   0,   255,  // Blue
+  255,  255, 0,   255   // Pink
+};
+
+CRGBPalette16 soundPalette = soundPalette_gp;
+
 enum AnimationState {
   TEMPERATURE_MAP,
   HeatMap,
@@ -56,6 +65,8 @@ void setup() {
   FastLED.addLeds<WS2813, LED_STRIP_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(155);
   FastLED.show();  // Initialize all LEDs to 'off'
+
+  
 }
 
 void loop() {
@@ -192,7 +203,6 @@ CRGB customHeatMap() {
 }
 
 void updateSounding() {
-
   const int numReadings = 10;
   int soundReadings[numReadings];
   static unsigned long lastSoundReadTime = 0;
@@ -200,47 +210,55 @@ void updateSounding() {
   int soundIndex = 0;
   int totalSound = 0;
 
-  
-
-
-
   unsigned long currentMillis = millis();
-  if(currentMillis - lastSoundReadTime >= soundReadInterval) {
+  if (currentMillis - lastSoundReadTime >= soundReadInterval) {
     int soundLevel = analogRead(soundSensorPin);
-  
 
-// LCD for the sound profile
-      lcd.setCursor(0, 0);
-      lcd.print("Decibels:       ");
+    // Smoothing
+    totalSound = totalSound - soundReadings[soundIndex] + soundLevel;
+    soundReadings[soundIndex] = soundLevel;
+    soundIndex = (soundIndex + 1) % numReadings;
 
+    int averageSound = totalSound / numReadings;
 
- // smoothing    
-      totalSound = totalSound - soundReadings[soundIndex] + soundLevel;
-      soundReadings[soundIndex] = soundLevel;
-      soundIndex = (soundIndex + 1) % numReadings;
+    lastSoundReadTime = currentMillis;
 
-  int averageSound = totalSound / numReadings;  
+    // Debug
+    Serial.print("Sound level: ");
+    Serial.println(averageSound);
 
-  lastSoundReadTime = currentMillis;  
+    // LCD for the sound profile
+    lcd.setCursor(0, 0);
+    lcd.print("Sound level: ");
+    lcd.setCursor(0, 1);
+    lcd.print(averageSound);
+    lcd.setCursor(2, 1);
+    lcd.print("                "); // Clear the line
 
-  //debug
-  Serial.print("Sound level:    ");
-  Serial.println(averageSound);
+    // Smoothed LED brightness
+    int brightness = map(averageSound, 0, 100, 0, 255);
 
-// smoothed LED brightness
-  int brightness = map(averageSound, 0, 1023, 0, 255);
-       CRGB color = CRGB(brightness, 0, 0);
+    CRGB color;
 
-  // Set the color of the entire LED strip
-      setColor(color);
-
-    if (averageSound > 500) {
-      // if high sound, change to a diff color
+    // Adjust this threshold as needed
+    int soundThreshold = 40;
+    if (averageSound > soundThreshold) {
+      // If the sound level exceeds the threshold, smoothly transition to a different color (e.g., green)
       color = CRGB(0, brightness, 0);
-      setColor(color);
+    } else {
+      // Otherwise, smoothly transition back to the color based on the sound level
+      color = ColorFromPalette(soundPalette, brightness);
     }
+
+    // Set the color and brightness of the entire LED strip
+    fill_solid(leds, NUM_LEDS, color);
+    FastLED.show();
   }
 }
+
+
+
+
 
 bool debounceSwitchState() {
   static unsigned long lastDebounceTime = 0;
