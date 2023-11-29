@@ -192,8 +192,17 @@ CRGB customHeatMap() {
 }
 
 void updateSounding() {
-//logic
+int soundLevel = analogRead(soundSensorPin);
 
+lcd.setCursor(0, 0);
+lcd.print("Decibels:       ");
+  // Adjust LEDs based on sound level
+  // Example: Map sound level to LED brightness
+  int brightness = map(soundLevel, 0, 1023, 0, 255);
+  CRGB color = CRGB(brightness, 0, 0);
+
+  // Set the color of the entire LED strip
+  setColor(color);
 }
 
 bool debounceSwitchState() {
