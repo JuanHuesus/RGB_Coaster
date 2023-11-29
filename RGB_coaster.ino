@@ -4,7 +4,7 @@
 
 
 #define LED_STRIP_PIN    2  
-#define NUM_LEDS         18   
+#define NUM_LEDS         18
 #define LM35_PIN         A6   
 #define SWITCH_PIN       3
 
@@ -24,7 +24,8 @@ CRGBPalette16 myPal = heatmap_gp;
 
 enum AnimationState {
   TEMPERATURE_MAP,
-  CUSTOM_ANIMATION
+  HeatMap,
+  Sounding
 };
 
 AnimationState currentAnimationState = TEMPERATURE_MAP;
@@ -38,44 +39,53 @@ unsigned long lastCustomAnimationUpdate =0;
 
 bool lastSwitchState = HIGH;
 bool switchState = HIGH;
+bool debounceSwitchState();
 
+int soundSensorPin = A3;
 
 void setup() {
   Serial.begin(9600);
 
   pinMode(SWITCH_PIN, INPUT_PULLUP);
+  pinMode(soundSensorPin, INPUT);
 
   lcd.begin(16, 2);
   lcd.setRGB(255, 0, 0);  // Set LCD backlight color (R, G, B)
 
 
   FastLED.addLeds<WS2813, LED_STRIP_PIN, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(50);
+  FastLED.setBrightness(155);
   FastLED.show();  // Initialize all LEDs to 'off'
 }
 
 void loop() {
   unsigned long currentMillis = millis();
+  int soundLevel = analogRead(soundSensorPin);
 
   // Read the switch state with debounce
   switchState = debounceSwitchState();
 
   // Update animation based on the current state
   switch (currentAnimationState) {
-    case TEMPERATURE_MAP:
-      if (currentMillis - lastTemperatureUpdate >= temperatureUpdateInterval) {
+  case TEMPERATURE_MAP:
+     if (currentMillis - lastTemperatureUpdate >= temperatureUpdateInterval) {
         updateTemperatureMap();
         lastTemperatureUpdate = currentMillis;
-      }
-      break;
+        }
+    break;
 
-    case CUSTOM_ANIMATION:
-      if (currentMillis - lastCustomAnimationUpdate >= customAnimationInterval) {
+  case HeatMap:
+     if (currentMillis - lastCustomAnimationUpdate >= customAnimationInterval) {
         updateCustomAnimation();
         lastCustomAnimationUpdate = currentMillis;
-      }
-      break;
-  }
+     }
+    break;
+
+  case Sounding:
+    updateSounding();
+    break;
+     
+}
 
   // Check for switch press and update state
   handleSwitchPress();
@@ -104,8 +114,6 @@ void handleSwitchPress() {
 
 void updateTemperatureMap() {
 
-  
-
   float temp_val = getTemperature();
   Serial.print("Temperature = ");
   Serial.print(temp_val);
@@ -128,7 +136,7 @@ void updateTemperatureMap() {
 
 void updateCustomAnimation() {
   // Your custom animation logic here
-  CRGB color = customAnimation();
+  CRGB color = customHeatMap();
 
   // Set the color of the entire LED strip
   setColor(color);
@@ -166,10 +174,10 @@ void setColor(CRGB color) {
 
 void toggleLightMode() {
   // Toggle the animation state
-  currentAnimationState = (currentAnimationState == TEMPERATURE_MAP) ? CUSTOM_ANIMATION : TEMPERATURE_MAP;
+  currentAnimationState = static_cast<AnimationState>((currentAnimationState + 1) % 3);
 }
 
-CRGB customAnimation() {
+CRGB customHeatMap() {
   CRGB color;
 
   // Example: Fill LEDs with a gradient palette
@@ -181,6 +189,11 @@ CRGB customAnimation() {
   FastLED.show();
 
   return color;
+}
+
+void updateSounding() {
+//logic
+
 }
 
 bool debounceSwitchState() {
@@ -202,3 +215,4 @@ bool debounceSwitchState() {
   lastSwitchState = reading;
   return switchState;
 }
+
