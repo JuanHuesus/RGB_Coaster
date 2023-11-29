@@ -192,17 +192,54 @@ CRGB customHeatMap() {
 }
 
 void updateSounding() {
-int soundLevel = analogRead(soundSensorPin);
 
-lcd.setCursor(0, 0);
-lcd.print("Decibels:       ");
-  // Adjust LEDs based on sound level
-  // Example: Map sound level to LED brightness
-  int brightness = map(soundLevel, 0, 1023, 0, 255);
-  CRGB color = CRGB(brightness, 0, 0);
+  const int numReadings = 10;
+  int soundReadings[numReadings];
+  static unsigned long lastSoundReadTime = 0;
+  const unsigned long soundReadInterval = 10;
+  int soundIndex = 0;
+  int totalSound = 0;
+
+  
+
+
+
+  unsigned long currentMillis = millis();
+  if(currentMillis - lastSoundReadTime >= soundReadInterval) {
+    int soundLevel = analogRead(soundSensorPin);
+  
+
+// LCD for the sound profile
+      lcd.setCursor(0, 0);
+      lcd.print("Decibels:       ");
+
+
+ // smoothing    
+      totalSound = totalSound - soundReadings[soundIndex] + soundLevel;
+      soundReadings[soundIndex] = soundLevel;
+      soundIndex = (soundIndex + 1) % numReadings;
+
+  int averageSound = totalSound / numReadings;  
+
+  lastSoundReadTime = currentMillis;  
+
+  //debug
+  Serial.print("Sound level:    ");
+  Serial.println(averageSound);
+
+// smoothed LED brightness
+  int brightness = map(averageSound, 0, 1023, 0, 255);
+       CRGB color = CRGB(brightness, 0, 0);
 
   // Set the color of the entire LED strip
-  setColor(color);
+      setColor(color);
+
+    if (averageSound > 500) {
+      // if high sound, change to a diff color
+      color = CRGB(0, brightness, 0);
+      setColor(color);
+    }
+  }
 }
 
 bool debounceSwitchState() {
