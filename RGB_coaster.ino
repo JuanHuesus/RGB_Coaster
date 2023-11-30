@@ -11,6 +11,8 @@
 CRGB leds[NUM_LEDS];
 rgb_lcd lcd;
 
+
+// Define rgb palettes
 uint8_t paletteIndex = 0;
 
 DEFINE_GRADIENT_PALETTE (heatmap_gp) {
@@ -41,10 +43,14 @@ AnimationState currentAnimationState = TEMPERATURE_MAP;
 
 const unsigned long temperatureUpdateInterval = 1000;
 const unsigned long customAnimationInterval = 5;
+const unsigned long soundReadInterval = 10;
+
+unsigned long lastTemperatureUpdate = 0;
+unsigned long lastCustomAnimationUpdate = 0;
+unsigned long lastSoundReadTime = 0;
+
 unsigned long lastSwitchTime = 0;
 unsigned long switchCooldown = 500;  // Reduce the cooldown time
-unsigned long lastTemperatureUpdate = 0;
-unsigned long lastCustomAnimationUpdate =0;
 
 bool lastSwitchState = HIGH;
 bool switchState = HIGH;
@@ -58,15 +64,12 @@ void setup() {
   pinMode(SWITCH_PIN, INPUT_PULLUP);
   pinMode(soundSensorPin, INPUT);
 
-  lcd.begin(16, 2);
-  lcd.setRGB(255, 0, 0);  // Set LCD backlight color (R, G, B)
+  lcd.begin(16, 2);  // Set LCD backlight color (R, G, B)
 
 
   FastLED.addLeds<WS2813, LED_STRIP_PIN, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(155);
+  FastLED.setBrightness(255);
   FastLED.show();  // Initialize all LEDs to 'off'
-
-  
 }
 
 void loop() {
@@ -78,25 +81,27 @@ void loop() {
 
   // Update animation based on the current state
   switch (currentAnimationState) {
-  case TEMPERATURE_MAP:
-     if (currentMillis - lastTemperatureUpdate >= temperatureUpdateInterval) {
+    case TEMPERATURE_MAP:
+      if (currentMillis - lastTemperatureUpdate >= temperatureUpdateInterval) {
         updateTemperatureMap();
         lastTemperatureUpdate = currentMillis;
-        }
-    break;
+      }
+      break;
 
-  case HeatMap:
-     if (currentMillis - lastCustomAnimationUpdate >= customAnimationInterval) {
+    case HeatMap:
+      if (currentMillis - lastCustomAnimationUpdate >= customAnimationInterval) {
         updateCustomAnimation();
         lastCustomAnimationUpdate = currentMillis;
-     }
-    break;
+      }
+      break;
 
-  case Sounding:
-    updateSounding();
-    break;
-     
-}
+    case Sounding:
+      if (currentMillis - lastSoundReadTime >= soundReadInterval) {
+        updateSounding();
+        lastSoundReadTime = currentMillis;
+      }
+      break;
+  }
 
   // Check for switch press and update state
   handleSwitchPress();
@@ -110,8 +115,6 @@ void loop() {
   }
 }
 
-
-
 void handleSwitchPress() {
   static bool buttonWasPressed = false;
   if (switchState == LOW && !buttonWasPressed) {
@@ -121,7 +124,6 @@ void handleSwitchPress() {
     buttonWasPressed = false;
   }
 }
-
 
 void updateTemperatureMap() {
 
@@ -147,11 +149,14 @@ void updateTemperatureMap() {
 
 void updateCustomAnimation() {
   // Your custom animation logic here
-  CRGB color = customHeatMap();
+  // Example: Fill LEDs with a gradient palette
+  fill_palette(leds, NUM_LEDS, paletteIndex, 255 / NUM_LEDS, myPal, 255, LINEARBLEND);
 
-  // Set the color of the entire LED strip
-  setColor(color);
+  EVERY_N_MILLISECONDS(1) {
+    paletteIndex++;
+  }
 
+  FastLED.show();
   lcd.setCursor(0, 0);
   lcd.print("Lighting:            ");
   lcd.setCursor(0, 1);
@@ -188,77 +193,54 @@ void toggleLightMode() {
   currentAnimationState = static_cast<AnimationState>((currentAnimationState + 1) % 3);
 }
 
-CRGB customHeatMap() {
-  CRGB color;
-
-  // Example: Fill LEDs with a gradient palette
-  fill_palette(leds, NUM_LEDS, paletteIndex, 255 / NUM_LEDS, myPal, 255, LINEARBLEND);
-
-  EVERY_N_MILLISECONDS(5) {
-    paletteIndex++;
-  }
-  FastLED.show();
-
-  return color;
-}
-
 void updateSounding() {
   const int numReadings = 10;
+
   int soundReadings[numReadings];
-  static unsigned long lastSoundReadTime = 0;
-  const unsigned long soundReadInterval = 10;
+
   int soundIndex = 0;
   int totalSound = 0;
 
-  unsigned long currentMillis = millis();
-  if (currentMillis - lastSoundReadTime >= soundReadInterval) {
-    int soundLevel = analogRead(soundSensorPin);
+  int soundLevel = analogRead(soundSensorPin);
 
-    // Smoothing
-    totalSound = totalSound - soundReadings[soundIndex] + soundLevel;
-    soundReadings[soundIndex] = soundLevel;
-    soundIndex = (soundIndex + 1) % numReadings;
+  // Smoothing
+  totalSound = totalSound - soundReadings[soundIndex] + soundLevel;
+  soundReadings[soundIndex] = soundLevel;
+  soundIndex = (soundIndex + 1) % numReadings;
 
-    int averageSound = totalSound / numReadings;
+  int averageSound = totalSound / numReadings;
+  3
+  // Debug
+  Serial.print("Sound level: ");
+  Serial.println(averageSound);
 
-    lastSoundReadTime = currentMillis;
+  // LCD for the sound profile
+  lcd.setCursor(0, 0);
+  lcd.print("Sound level: ");
+  lcd.setCursor(0, 1);
+  lcd.print(averageSound);
+  lcd.setCursor(2, 1);
+  lcd.print("                "); // Clear the line
 
-    // Debug
-    Serial.print("Sound level: ");
-    Serial.println(averageSound);
+  // Smoothed LED brightness
+  int brightness = map(averageSound, 0, 100, 0, 255);
 
-    // LCD for the sound profile
-    lcd.setCursor(0, 0);
-    lcd.print("Sound level: ");
-    lcd.setCursor(0, 1);
-    lcd.print(averageSound);
-    lcd.setCursor(2, 1);
-    lcd.print("                "); // Clear the line
+  CRGB color;
 
-    // Smoothed LED brightness
-    int brightness = map(averageSound, 0, 100, 0, 255);
-
-    CRGB color;
-
-    // Adjust this threshold as needed
-    int soundThreshold = 40;
-    if (averageSound > soundThreshold) {
-      // If the sound level exceeds the threshold, smoothly transition to a different color (e.g., green)
-      color = CRGB(0, brightness, 0);
-    } else {
-      // Otherwise, smoothly transition back to the color based on the sound level
-      color = ColorFromPalette(soundPalette, brightness);
-    }
-
-    // Set the color and brightness of the entire LED strip
-    fill_solid(leds, NUM_LEDS, color);
-    FastLED.show();
+  // Adjust this threshold as needed
+  int soundThreshold = 40;
+  if (averageSound > soundThreshold) {
+    // If the sound level exceeds the threshold, smoothly transition to a different color (e.g., green)
+    color = CRGB(0, brightness, 0);
+  } else {
+    // Otherwise, smoothly transition back to the color based on the sound level
+    color = ColorFromPalette(soundPalette, brightness);
   }
+
+  // Set the color and brightness of the entire LED strip
+  fill_solid(leds, NUM_LEDS, color);
+  FastLED.show();
 }
-
-
-
-
 
 bool debounceSwitchState() {
   static unsigned long lastDebounceTime = 0;
