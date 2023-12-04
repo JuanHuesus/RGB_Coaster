@@ -2,17 +2,20 @@
 #include <Wire.h>
 #include <rgb_lcd.h>
 
+// Define pins for data
 
 #define LED_STRIP_PIN    2  
 #define NUM_LEDS         18
 #define LM35_PIN         A6   
 #define SWITCH_PIN       3
+#define soundSensorPin   A3
 
+// initialize the LED strip and LCD screen
 CRGB leds[NUM_LEDS];
 rgb_lcd lcd;
 
 
-// Define rgb palettes
+// Define rgb palettes for the LED strip
 uint8_t paletteIndex = 0;
 
 DEFINE_GRADIENT_PALETTE (heatmap_gp) {
@@ -33,12 +36,14 @@ DEFINE_GRADIENT_PALETTE(soundPalette_gp) {
 
 CRGBPalette16 soundPalette = soundPalette_gp;
 
+// variables for the button switch
 enum AnimationState {
   TEMPERATURE_MAP,
   HeatMap,
   Sounding
 };
 
+// variables for reading the temperature etc
 AnimationState currentAnimationState = TEMPERATURE_MAP;
 
 const unsigned long temperatureUpdateInterval = 1000;
@@ -56,15 +61,15 @@ bool lastSwitchState = HIGH;
 bool switchState = HIGH;
 bool debounceSwitchState();
 
-int soundSensorPin = A3;
 
+// setup for Serial Monitor, pins and the LED strip
 void setup() {
   Serial.begin(9600);
 
   pinMode(SWITCH_PIN, INPUT_PULLUP);
   pinMode(soundSensorPin, INPUT);
 
-  lcd.begin(16, 2);  // Set LCD backlight color (R, G, B)
+  lcd.begin(16, 2); 
 
 
   FastLED.addLeds<WS2813, LED_STRIP_PIN, GRB>(leds, NUM_LEDS);
@@ -72,6 +77,7 @@ void setup() {
   FastLED.show();  // Initialize all LEDs to 'off'
 }
 
+// loop through the different profiles with a button switch, print on the LCD and serial for debugging
 void loop() {
   unsigned long currentMillis = millis();
   int soundLevel = analogRead(soundSensorPin);
@@ -97,7 +103,7 @@ void loop() {
 
     case Sounding:
       if (currentMillis - lastSoundReadTime >= soundReadInterval) {
-        updateSounding();
+        updateSounds();
         lastSoundReadTime = currentMillis;
       }
       break;
@@ -147,15 +153,14 @@ void updateTemperatureMap() {
   setColor(color);
 }
 
+  // LED animation logic for the HeatMap profile, which just rotates a palette around the selected LEDs
 void updateCustomAnimation() {
-  // Your custom animation logic here
-  // Example: Fill LEDs with a gradient palette
   fill_palette(leds, NUM_LEDS, paletteIndex, 255 / NUM_LEDS, myPal, 255, LINEARBLEND);
 
   EVERY_N_MILLISECONDS(1) {
     paletteIndex++;
   }
-
+  // LCD code to show what lighting profile is applied
   FastLED.show();
   lcd.setCursor(0, 0);
   lcd.print("Lighting:            ");
@@ -163,6 +168,7 @@ void updateCustomAnimation() {
   lcd.print("Heat Map             ");
 }
 
+  // code for getting the temperature and converting it to Celsius
 float getTemperature() {
 
   static unsigned long lastTemperatureReadTime = 50;
@@ -177,23 +183,27 @@ float getTemperature() {
   return (temp_adc_val * 4.88) / 10.0;  // Convert adc value to temperature in Celsius
 }
 
+// color coding for the LED profile which reacts to the temperature
 CRGB mapTemperatureToColor(float temperature) {
   uint8_t r = map(temperature, 10, 50, 0, 255);
   uint8_t g = map(temperature, 10, 50, 255, 0);
   return CRGB(r, g, 0);
 }
 
+  // sets the color evenly across the appointed LEDs
 void setColor(CRGB color) {
   fill_solid(leds, NUM_LEDS, color);
   FastLED.show();
 }
 
+   
 void toggleLightMode() {
   // Toggle the animation state
   currentAnimationState = static_cast<AnimationState>((currentAnimationState + 1) % 3);
 }
 
-void updateSounding() {
+  // Code for processing the detected sound with smoothing
+void updateSounds() {
   const int numReadings = 10;
 
   int soundReadings[numReadings];
@@ -209,7 +219,7 @@ void updateSounding() {
   soundIndex = (soundIndex + 1) % numReadings;
 
   int averageSound = totalSound / numReadings;
-  3
+  
   // Debug
   Serial.print("Sound level: ");
   Serial.println(averageSound);
@@ -227,21 +237,22 @@ void updateSounding() {
 
   CRGB color;
 
-  // Adjust this threshold as needed
+  // Logic for going between colors while reactive to sound
   int soundThreshold = 40;
   if (averageSound > soundThreshold) {
-    // If the sound level exceeds the threshold, smoothly transition to a different color (e.g., green)
+  // If the sound level exceeds the threshold, smoothly transition to a different color
     color = CRGB(0, brightness, 0);
   } else {
-    // Otherwise, smoothly transition back to the color based on the sound level
+  // Otherwise, smoothly transition back to the color based on the sound level
     color = ColorFromPalette(soundPalette, brightness);
   }
 
-  // Set the color and brightness of the entire LED strip
+  // Set the color and brightness of the LED strip
   fill_solid(leds, NUM_LEDS, color);
   FastLED.show();
 }
 
+  // debounce for the button
 bool debounceSwitchState() {
   static unsigned long lastDebounceTime = 0;
   static unsigned long debounceDelay = 50;
