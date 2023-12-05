@@ -4,6 +4,8 @@
 
 // Define pins for data
 
+// lcd SDA -> A4
+// lcd SCL -> A5
 #define LED_STRIP_PIN    2  
 #define NUM_LEDS         18
 #define LM35_PIN         A6   
@@ -64,7 +66,7 @@ bool debounceSwitchState();
 
 // setup for Serial Monitor, pins and the LED strip
 void setup() {
-  Serial.begin(9600);
+  // Serial.begin(9600);
 
   pinMode(SWITCH_PIN, INPUT_PULLUP);
   pinMode(soundSensorPin, INPUT);
@@ -73,7 +75,7 @@ void setup() {
 
 
   FastLED.addLeds<WS2813, LED_STRIP_PIN, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(255);
+  FastLED.setBrightness(50);
   FastLED.show();  // Initialize all LEDs to 'off'
 }
 
@@ -113,12 +115,12 @@ void loop() {
   handleSwitchPress();
 
   // Display information in the Serial Monitor at a slower rate
-  if (currentMillis % 500 == 0) {
-    Serial.print("Temperature: ");
-    Serial.print(getTemperature());
-    Serial.print(" C | Button State: ");
-    Serial.println(switchState);
-  }
+ // if (currentMillis % 500 == 0) {
+   //  Serial.print("Temperature: ");
+   //  Serial.print(getTemperature());
+   //  Serial.print(" C | Button State: ");
+   //  Serial.println(switchState);
+ // }
 }
 
 void handleSwitchPress() {
@@ -134,9 +136,9 @@ void handleSwitchPress() {
 void updateTemperatureMap() {
 
   float temp_val = getTemperature();
-  Serial.print("Temperature = ");
-  Serial.print(temp_val);
-  Serial.println(" Degree Celsius");
+ //  Serial.print("Temperature = ");
+ //  Serial.print(temp_val);
+ //  Serial.println(" Degree Celsius");
 
   // Display temperature on the LCD
   lcd.setCursor(0, 0);
@@ -221,8 +223,8 @@ void updateSounds() {
   int averageSound = totalSound / numReadings;
   
   // Debug
-  Serial.print("Sound level: ");
-  Serial.println(averageSound);
+ //  Serial.print("Sound level: ");
+ // Serial.println(averageSound);
 
   // LCD for the sound profile
   lcd.setCursor(0, 0);
@@ -238,7 +240,7 @@ void updateSounds() {
   CRGB color;
 
   // Logic for going between colors while reactive to sound
-  int soundThreshold = 40;
+  int soundThreshold = 10;
   if (averageSound > soundThreshold) {
   // If the sound level exceeds the threshold, smoothly transition to a different color
     color = CRGB(0, brightness, 0);
