@@ -38,9 +38,9 @@ CRGBPalette16 myPal = heatmap_gp;
 // Define
 DEFINE_GRADIENT_PALETTE(soundPalette_gp) {
   0,    128, 0, 128,  // Purple
-  64,   0,   200, 255,  // Cyan
-  128,  0,   0,   255,  // Blue
-  255,  255, 0,   255   // Pink
+  3,   0,   200, 255,  // Cyan
+  6,  0,   0,   255,  // Blue
+  12,  255, 0,   255   // Pink
 };
 
 // Set
