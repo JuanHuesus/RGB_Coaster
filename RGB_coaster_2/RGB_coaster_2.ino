@@ -7,7 +7,7 @@
 // lcd SCL -> A5
 #define LED_STRIP_PIN    2  
 #define NUM_LEDS         18
-#define BRIGHTNESS       100
+#define BRIGHTNESS       20
 
 #define LM35_PIN         6   
 #define SWITCH_PIN       3
@@ -39,9 +39,9 @@ CRGBPalette16 myPal = heatmap_gp;
 // Define
 DEFINE_GRADIENT_PALETTE(soundPalette_gp) {
   0,    128, 0, 128,  // Purple
-  64,   0,   200, 255,  // Cyan
+  64,   0,   255, 255,  // Cyan
   128,  0,   0,   255,  // Blue
-  255,  255, 0,   255   // Pink
+  255,  0, 0,   128   // White
 };
 
 // Set
